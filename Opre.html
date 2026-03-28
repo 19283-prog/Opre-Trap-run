@@ -203,7 +203,10 @@ window.addEventListener("keydown", e => {
   if (k==="arrowright"||k==="d") keys.right=true;
   if (k==="arrowup"||k==="w"||k===" ") { keys.jump=true; justPressedJump=true; }
   if (k==="r") { if (!inMenu) { if (gameWon) restartAll(); else loadLevel(levelIndex); } }
-  if (k==="enter"||k===" ") { if (inMenu) startGame(); }
+  if (k==="enter"||k===" ") {
+    if (inMenu) startGame();
+    else if (gameWon) restartAll();
+  }
 });
 window.addEventListener("keyup", e => {
   const k = e.key.toLowerCase();
@@ -860,6 +863,7 @@ function startGame() {
   playSound("start");
   inMenu = false; gameWon = false;
   playBtn.textContent = "▶ PLAY";
+  skipBtnMenu.textContent = "Skip Level";
   skipBtnMenu.style.display = "inline-block";
   soundBtn.style.display = "inline-block";
   overlay.classList.add("hidden");
@@ -881,6 +885,7 @@ function restartAll() {
   gameWon = false;
   startMusic();
   playBtn.textContent = "▶ PLAY";
+  skipBtnMenu.textContent = "Skip Level";
   skipBtnMenu.style.display = "inline-block";
   soundBtn.style.display = "inline-block";
   overlay.classList.add("hidden");
@@ -900,6 +905,7 @@ function jumpToLevel(idx) {
     inMenu = false;
     gameWon = false;
     playBtn.textContent = "▶ PLAY";
+    skipBtnMenu.textContent = "Skip Level";
     skipBtnMenu.style.display = "inline-block";
     soundBtn.style.display = "inline-block";
     overlay.classList.add("hidden");
@@ -1727,7 +1733,9 @@ function drawWinScreen() {
   // Show play again button
   overlay.classList.remove("hidden");
   playBtn.textContent = "▶ PLAY AGAIN";
-  skipBtnMenu.style.display="none";
+  skipBtnMenu.textContent = "Choose Level";
+  skipBtnMenu.style.display = "inline-block";
+  soundBtn.style.display = "inline-block";
   statusPill.textContent="🏆 YOU WIN!";
 }
 
