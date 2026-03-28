@@ -85,6 +85,39 @@
       opacity: 0; transition: opacity 0.2s; max-width: 92vw; text-align: center;
     }
     #deathMsg.show { opacity: 1; }
+    #levelSelect {
+      position: fixed; inset: 0; z-index: 25;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(5,10,24,0.72); backdrop-filter: blur(4px);
+    }
+    #levelSelect.hidden { display: none; }
+    .level-card {
+      background: linear-gradient(160deg,#17345f,#0d1e3c);
+      border: 3px solid rgba(255,255,255,0.18); border-radius: 22px;
+      padding: 24px; width: min(92vw, 720px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+    }
+    .level-card h2 {
+      font-size: 1.5rem; color: var(--accent); margin-bottom: 10px; text-align: center;
+    }
+    .level-card p {
+      color: #bdd2ee; text-align: center; margin-bottom: 18px; font-size: 0.92rem;
+    }
+    #levelGrid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      gap: 10px;
+    }
+    .level-btn {
+      appearance: none; border: 2px solid rgba(255,255,255,0.16);
+      border-radius: 12px; background: rgba(255,255,255,0.08); color: #fff;
+      cursor: pointer; font: inherit; font-weight: 700; padding: 12px 10px;
+      transition: transform 0.12s, filter 0.12s, background 0.12s;
+    }
+    .level-btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
+    .level-btn.current { background: rgba(255,228,75,0.18); border-color: rgba(255,228,75,0.5); color: #ffe44b; }
+    .level-actions {
+      display: flex; justify-content: center; margin-top: 16px;
+    }
   </style>
 </head>
 <body>
@@ -119,6 +152,17 @@
   </div>
 </div>
 
+<div id="levelSelect" class="hidden">
+  <div class="level-card">
+    <h2>Choose A Level</h2>
+    <p>Click any level to jump straight there.</p>
+    <div id="levelGrid"></div>
+    <div class="level-actions">
+      <button class="btn btn-secondary" id="closeLevelSelect">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── Canvas Setup ─────────────────────────────────────────────────────────────
 const canvas = document.getElementById("gameCanvas");
@@ -134,6 +178,9 @@ window.addEventListener("resize", resize);
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 const overlay = document.getElementById("overlay");
+const levelSelect = document.getElementById("levelSelect");
+const levelGrid = document.getElementById("levelGrid");
+const closeLevelSelectBtn = document.getElementById("closeLevelSelect");
 const playBtn = document.getElementById("playBtn");
 const skipBtnMenu = document.getElementById("skipBtn");
 const soundBtn = document.getElementById("soundBtn");
@@ -163,6 +210,7 @@ window.addEventListener("keyup", e => {
   if (k==="arrowleft"||k==="a") keys.left=false;
   if (k==="arrowright"||k==="d") keys.right=false;
   if (k==="arrowup"||k==="w"||k===" ") keys.jump=false;
+  if (k==="escape") closeLevelSelect();
 });
 window.addEventListener("pointerdown", unlockAudioFromGesture, { passive: true });
 window.addEventListener("keydown", unlockAudioFromGesture);
@@ -840,12 +888,45 @@ function restartAll() {
   loadLevel(0);
 }
 
+function closeLevelSelect() {
+  levelSelect.classList.add("hidden");
+}
+
+function jumpToLevel(idx) {
+  if (idx < 0 || idx >= LEVEL_COUNT) return;
+  if (inMenu || gameWon) {
+    ensureAudio();
+    startMusic();
+    inMenu = false;
+    gameWon = false;
+    playBtn.textContent = "▶ PLAY";
+    skipBtnMenu.style.display = "inline-block";
+    soundBtn.style.display = "inline-block";
+    overlay.classList.add("hidden");
+    startTime = Date.now();
+  }
+  closeLevelSelect();
+  loadLevel(idx);
+}
+
+function openLevelSelect() {
+  levelGrid.innerHTML = "";
+  for (let i = 0; i < LEVEL_COUNT; i++) {
+    const btn = document.createElement("button");
+    btn.className = "level-btn" + (i === levelIndex && !inMenu && !gameWon ? " current" : "");
+    btn.textContent = `Level ${i + 1}`;
+    btn.addEventListener("click", () => jumpToLevel(i));
+    levelGrid.appendChild(btn);
+  }
+  levelSelect.classList.remove("hidden");
+}
+
 playBtn.addEventListener("click", () => {
   if (inMenu) startGame();
   else if (gameWon) restartAll();
 });
 skipBtnMenu.addEventListener("click", () => {
-  if (!inMenu && !gameWon) loadLevel(levelIndex+1);
+  openLevelSelect();
 });
 soundBtn.addEventListener("click", () => {
   ensureAudio();
@@ -854,6 +935,10 @@ soundBtn.addEventListener("click", () => {
   setTimeout(() => playSound("jump"), 120);
   setTimeout(() => playSound("pickup"), 240);
   flashPowerup("✦ Sound test");
+});
+closeLevelSelectBtn.addEventListener("click", closeLevelSelect);
+levelSelect.addEventListener("click", e => {
+  if (e.target === levelSelect) closeLevelSelect();
 });
 
 // ─── Collision helpers ────────────────────────────────────────────────────────
